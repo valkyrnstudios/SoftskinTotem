@@ -1,0 +1,8 @@
+## Interface: 20501
+## Title: Softskin
+## Version: 1.0.1
+## Author: SabreValkyrn
+## Notes: Reporting how useless Stoneskin Totem is
+
+Softskin.lua
+
