@@ -11,7 +11,7 @@ local strengthOfEarthAP = 86 * 1.15; -- Enhancing Totems
 local damageTaken = 0
 local damageMitigated = 0
 
-local DEBUG = true
+local DEBUG = false
 
 function Softskin:OnInitialize()
     self:RegisterChatCommand("softskin", "ChatCommand")
@@ -59,13 +59,13 @@ function Softskin:EvaluateShaman()
         classFilename, _ = UnitClassBase("party" .. i)
         if classFilename == "SHAMAN" or DEBUG then
             self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
-            self:SendMessage("Shaman detected")
+            if DEBUG then self:SendMessage("Shaman detected") end
             return
         end
     end
 
     self:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
-    self:SendMessage("No Shaman detected")
+    if DEBUG then self:SendMessage("No Shaman detected") end
 end
 
 function Softskin:COMBAT_LOG_EVENT_UNFILTERED(...)
@@ -113,13 +113,15 @@ end
 
 function Softskin:BuildReport()
     return string.format(
-               "Softskin Totem: Damage taken: %d; maximum mitigated: %d (%.2f%%); theoretical loss of %d AP",
+               "Damage taken: %d; maximum mitigated: %d (%.2f%%); theoretical loss of %d AP",
                math.floor(damageTaken), math.floor(damageMitigated),
                damageMitigated / damageTaken * 100,
                math.floor(self:CalculateAP()))
 end
 
-function Softskin:Announce(report) SendChatMessage(report, "PARTY") end
+function Softskin:Announce(report)
+    SendChatMessage("Softskin Totem: " .. report, "PARTY")
+end
 
 function Softskin:GetEffectiveAP(class, hasKings)
     local effectiveAP = 0;
