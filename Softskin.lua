@@ -69,27 +69,23 @@ function Softskin:EvaluateShaman()
 end
 
 function Softskin:COMBAT_LOG_EVENT_UNFILTERED(...)
-    return self:CombatLogHandler(CombatLogGetCurrentEventInfo())
-end
-
-function Softskin:CombatLogHandler(...)
     if AuraUtil.FindAuraByName("Stoneskin Totem", "player") or DEBUG then
         if AuraUtil.FindAuraByName("Strength of Earth Totem", "player") then
             return -- Multiple shaman
         end
-    end
 
-    local _, subevent, _, _, _, _, _, destGUID, _, _, _ = ...
-
-    if destGUID ~= playerGUID then return end
-
-    local amount
-
-    if subevent == "SWING_DAMAGE" then
-        amount, _, _, _, _, _, _, _, _, _ = select(12, ...)
+        return self:CombatLogHandler(CombatLogGetCurrentEventInfo())
     else
         return
     end
+end
+
+function Softskin:CombatLogHandler(...)
+    local _, subevent, _, _, _, _, _, destGUID, _, _, _ = ...
+
+    if destGUID ~= playerGUID or subevent ~= "SWING_DAMAGE" then return end
+
+    local amount, _, _, _, _, _, _, _, _, _ = select(12, ...)
 
     damageTaken = damageTaken + amount
 
