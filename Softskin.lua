@@ -45,6 +45,8 @@ function Softskin:ChatCommand(input)
         damageMitigated = 0
     elseif input:trim() == "evaluate" then
         self:EvaluateShaman()
+    elseif input:trim() == "debug" then
+        DEBUG = not DEBUG
     end
 end
 
@@ -57,7 +59,7 @@ function Softskin:EvaluateShaman()
 
     for i = 1, GetNumGroupMembers() do
         classFilename, _ = UnitClassBase("party" .. i)
-        if classFilename == "SHAMAN" or DEBUG then
+        if classFilename == "SHAMAN" then
             self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
             if DEBUG then self:SendMessage("Shaman detected") end
             return
@@ -69,7 +71,7 @@ function Softskin:EvaluateShaman()
 end
 
 function Softskin:COMBAT_LOG_EVENT_UNFILTERED(...)
-    if AuraUtil.FindAuraByName("Stoneskin Totem", "player") or DEBUG then
+    if AuraUtil.FindAuraByName("Stoneskin Totem", "player") then
         if AuraUtil.FindAuraByName("Strength of Earth Totem", "player") then
             return -- Multiple shaman
         end
@@ -98,6 +100,12 @@ function Softskin:CombatLogHandler(...)
     local swingDamage = softskinSwingDamage + stoneskinReduction
 
     damageMitigated = damageMitigated + (swingDamage - softskinSwingDamage)
+
+    if DEBUG then
+        self:SendMessage(
+            "swingDamage: " .. swingDamage .. "; damageMitigated: " ..
+                damageMitigated)
+    end
 end
 
 function Softskin:SendMessage(msg)
