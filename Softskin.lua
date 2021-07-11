@@ -71,8 +71,8 @@ function Softskin:EvaluateShaman()
 end
 
 function Softskin:COMBAT_LOG_EVENT_UNFILTERED(...)
-    if AuraUtil.FindAuraByName("Stoneskin Totem", "player") then
-        if AuraUtil.FindAuraByName("Strength of Earth Totem", "player") then
+    if AuraUtil.FindAuraByName("Stoneskin Totem", "player") ~= nil then
+        if AuraUtil.FindAuraByName("Strength of Earth Totem", "player") ~= nil then
             return -- Multiple shaman
         end
 
