@@ -3,6 +3,7 @@ Softskin = LibStub("AceAddon-3.0"):NewAddon("Softskin", "AceConsole-3.0",
 
 local playerGUID = UnitGUID("player")
 local playerClass, _ = UnitClassBase("player")
+local playerName = UnitName("player")
 
 -- TODO query for party talents
 local stoneskinReduction = 43 * 1.2; -- Guardian Totems
@@ -71,8 +72,8 @@ function Softskin:EvaluateShaman()
 end
 
 function Softskin:COMBAT_LOG_EVENT_UNFILTERED(...)
-    if AuraUtil.FindAuraByName("Stoneskin Totem", "player") ~= nil then
-        if AuraUtil.FindAuraByName("Strength of Earth Totem", "player") ~= nil then
+    if AuraUtil.FindAuraByName("Stoneskin", "player") ~= nil then
+        if AuraUtil.FindAuraByName("Strength of Earth", "player") ~= nil then
             return -- Multiple shaman
         end
 
@@ -109,22 +110,56 @@ function Softskin:CombatLogHandler(...)
 end
 
 function Softskin:SendMessage(msg)
-    if (DEFAULT_CHAT_FRAME) then
+    if DEFAULT_CHAT_FRAME and msg ~= nil then
         DEFAULT_CHAT_FRAME:AddMessage("Softskin Totem: " .. msg, 0.0, 1.0, 0.0,
                                       1.0);
     end
 end
 
 function Softskin:BuildReport()
-    return string.format(
-               "Damage taken: %d; maximum mitigated: %d (%.2f%%); theoretical loss of %d AP",
-               math.floor(damageTaken), math.floor(damageMitigated),
-               damageMitigated / damageTaken * 100,
-               math.floor(self:CalculateAP()))
+    local classFilename, hasKings, entityName, unitAP;
+
+    local report = string.format(
+                       "Analysis\nDamage taken: %d\nMaximum mitigated: %d (%.2f%%)\nTheoretical loss of:\n",
+                       math.floor(damageTaken), math.floor(damageMitigated),
+                       damageMitigated / damageTaken * 100)
+
+    hasKings = AuraUtil.FindAuraByName("Blessing of Kings", "player") or
+                   AuraUtil.FindAuraByName("Greater Blessing of Kings", "player")
+
+    report = report .. string.format('* %s: %d AP\n', playerName, math.floor(
+                                         self:GetEffectiveAP(playerClass,
+                                                             hasKings)))
+
+    for i = 1, GetNumGroupMembers() - 1 do
+        classFilename, _ = UnitClassBase("party" .. i)
+        entityName = UnitName("party" .. i)
+
+        if entityName ~= nil then
+            hasKings =
+                AuraUtil.FindAuraByName("Blessing of Kings", "party" .. i) or
+                    AuraUtil.FindAuraByName("Greater Blessing of Kings",
+                                            "party" .. i)
+
+            unitAP = math.floor(self:GetEffectiveAP(classFilename, hasKings))
+
+            if unitAP > 0 then
+                report = report ..
+                             string.format('* %s: %d AP\n', entityName, unitAP)
+            end
+        end
+
+    end
+
+    return report;
 end
 
 function Softskin:Announce(report)
-    SendChatMessage("Softskin Totem: " .. report, "PARTY")
+    local lines = {strsplit('\n', report)}
+
+    SendChatMessage("Softskin Totem: " .. lines[1], "PARTY")
+
+    for i = 2, #lines do SendChatMessage(lines[i], "PARTY") end
 end
 
 function Softskin:GetEffectiveAP(class, hasKings)
@@ -154,23 +189,4 @@ function Softskin:GetEffectiveAP(class, hasKings)
     else
         return effectiveAP
     end
-end
-
-function Softskin:CalculateAP()
-    local classFilename, hasKings;
-    hasKings = AuraUtil.FindAuraByName("Blessing of Kings", "player") or
-                   AuraUtil.FindAuraByName("Greater Blessing of Kings", "player")
-
-    local effectiveAP = self:GetEffectiveAP(playerClass, hasKings)
-
-    for i = 1, GetNumGroupMembers() do
-        classFilename, _ = UnitClassBase("party" .. i)
-        hasKings = AuraUtil.FindAuraByName("Blessing of Kings", "party" .. i) or
-                       AuraUtil.FindAuraByName("Greater Blessing of Kings",
-                                               "party" .. i)
-
-        effectiveAP = effectiveAP + self:GetEffectiveAP(classFilename, hasKings)
-    end
-
-    return effectiveAP;
 end
