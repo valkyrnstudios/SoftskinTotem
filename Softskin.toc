@@ -3,6 +3,8 @@
 ## Version: 1.0
 ## Author: SabreValkyrn
 ## Notes: Calculates usefulness of Stoneskin Totem against Attack Power loss
+## X-Curse-Project-ID: 550214
+## X-Embeds: Ace3
 
 Softskin.lua
 
