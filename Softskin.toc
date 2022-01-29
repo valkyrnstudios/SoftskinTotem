@@ -1,4 +1,4 @@
-## Interface: 20501
+## Interface: 20503
 ## Title: Softskin
 ## Version: 1.0
 ## Author: SabreValkyrn
