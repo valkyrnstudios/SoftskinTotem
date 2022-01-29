@@ -4,6 +4,14 @@ Are you a tank and tired of shaman dropping Softskin Totem instead of Strength o
 
 Inspecting party member talents is difficult in BCC, so `/sst report` will show theoretical loss of Attack Power if all members where melee specced, use `/sst announce` to show the group.
 
+After a recent Hyjal run (01/28), which is the prime use case for Softskin Totem.
+
+```text
+Softskin Totem: Analysis
+Damage taken: 1146251
+Maximum mitigated: 92570 (8.08%)
+```
+
 ## Strength of Earth
 
 [Rank 6](https://tbc.wowhead.com/spell=25527/strength-of-earth) gives 86 strength for Elemental shaman, but Enhancement and Restoration get [Enhancing Totems](https://tbc.wowhead.com/spell=16295/enhancing-totems) which brings it to 98 strength. In a raid environment this is amplified by [Kings](https://tbc.wowhead.com/spell=25898/greater-blessing-of-kings) to a total of 108 Strength.
