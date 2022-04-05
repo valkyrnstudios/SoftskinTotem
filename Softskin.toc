@@ -1,6 +1,6 @@
-## Interface: 20503
+## Interface: 20504
 ## Title: Softskin
-## Version: 1.0
+## Version: @project-version@
 ## Author: SabreValkyrn
 ## Notes: Calculates usefulness of Stoneskin Totem against Attack Power loss
 ## X-Curse-Project-ID: 550214
