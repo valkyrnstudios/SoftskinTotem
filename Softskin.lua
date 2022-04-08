@@ -5,8 +5,27 @@ local playerClass, _ = UnitClassBase("player")
 local playerName = UnitName("player")
 
 -- TODO query for party talents
-local stoneskinReduction = 43 * 1.2; -- Guardian Totems
-local strengthOfEarthAP = 86 * 1.15; -- Enhancing Totems
+local strengthOfEarthAP = 86 * 1.15;
+
+local stoneSkinLookup = {
+    ["8071"] = 4,
+    ["8154"] = 7 * 1.2,
+    ["8155"] = 11 * 1.2, -- Guardian Totems at 16+
+    ["10406"] = 16 * 1.2,
+    ["10407"] = 22 * 1.2,
+    ["10408"] = 30 * 1.2,
+    ["25508"] = 36 * 1.2,
+    ["25509"] = 43 * 1.2
+}
+
+local strengthLookup = {
+    ["8075"] = 10,
+    ["8160"] = 20 * 1.15, -- Enhancing Totems at 21+
+    ["8161"] = 36 * 1.15,
+    ["10442"] = 61 * 1.15,
+    ["25361"] = 77 * 1.15,
+    ["25528"] = 86 * 1.15
+}
 
 local damageTaken = 0
 local damageMitigated = 0
@@ -47,6 +66,7 @@ function Softskin:ChatCommand(input)
         self:EvaluateShaman()
     elseif input:trim() == "debug" then
         DEBUG = not DEBUG
+        self:SendMessage(string.format("debug: %s", tostring(DEBUG)))
     end
 end
 
@@ -89,12 +109,14 @@ function Softskin:CombatLogHandler(...)
         return
     end
 
-    local _, _, _, _, _, _, _, _, buffID = AuraUtil.FindAuraByName("Stoneskin", "player")
+    local _, _, _, _, _, _, _, _, _, buffId = AuraUtil.FindAuraByName("Stoneskin", "player")
 
-    if buffID ~= nil then
-        if AuraUtil.FindAuraByName("Strength of Earth", "player") ~= nil then
-            return -- Multiple shaman
-        end
+    if buffId == nil then
+        return
+    end
+
+    if AuraUtil.FindAuraByName("Strength of Earth", "player") ~= nil then
+        return -- Multiple shaman
     end
 
     local amount, _, _, _, _, _, _, _, _, _ = select(12, ...)
@@ -106,12 +128,12 @@ function Softskin:CombatLogHandler(...)
     local softskinSwingDamage = amount / reduction
 
     -- Stoneskin active, so add damage back for calculations
-    local swingDamage = softskinSwingDamage + stoneskinReduction
+    local swingDamage = softskinSwingDamage + stoneSkinLookup[buffId]
 
     damageMitigated = damageMitigated + (swingDamage - softskinSwingDamage)
 
     if DEBUG then
-        self:SendMessage("swingDamage: " .. swingDamage .. "; damageMitigated: " .. damageMitigated)
+        -- self:SendMessage("swingDamage: " .. swingDamage .. "; damageMitigated: " .. damageMitigated)
     end
 end
 
@@ -164,7 +186,7 @@ function Softskin:Announce(report)
 end
 
 function Softskin:GetEffectiveAP(class, hasKings)
-    local effectiveAP = 0;
+    local effectiveAP = 0
 
     if class == "WARRIOR" then
         -- Prot (Vitality) / Fury (Imp Berserker): * 1.1
