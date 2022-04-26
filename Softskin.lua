@@ -4,31 +4,35 @@ local playerGUID = UnitGUID("player")
 local playerClass, _ = UnitClassBase("player")
 local playerName = UnitName("player")
 
--- TODO query for party talents
-local strengthOfEarthAP = 86 * 1.15;
+local findAura = AuraUtil.FindAuraByName
+local getArmorEffectivenessAgainstTarget = C_PaperDollInfo.GetArmorEffectivenessAgainstTarget
+local floor = math.floor
+local fmt = string.format
 
 local stoneSkinLookup = {
-    ["8071"] = 4,
-    ["8154"] = 7 * 1.2,
-    ["8155"] = 11 * 1.2, -- Guardian Totems at 16+
-    ["10406"] = 16 * 1.2,
-    ["10407"] = 22 * 1.2,
-    ["10408"] = 30 * 1.2,
-    ["25508"] = 36 * 1.2,
-    ["25509"] = 43 * 1.2
+    [8072] = 4,
+    [8156] = 7 * 1.2,
+    [8157] = 11 * 1.2, -- Guardian Totems at 16+
+    [10403] = 16 * 1.2,
+    [10404] = 22 * 1.2,
+    [10405] = 30 * 1.2,
+    [25506] = 36 * 1.2,
+    [25507] = 43 * 1.2
 }
 
 local strengthLookup = {
-    ["8075"] = 10,
-    ["8160"] = 20 * 1.15, -- Enhancing Totems at 21+
-    ["8161"] = 36 * 1.15,
-    ["10442"] = 61 * 1.15,
-    ["25361"] = 77 * 1.15,
-    ["25528"] = 86 * 1.15
+    [8076] = 10,
+    [31634] = 20 * 1.15, -- Enhancing Totems at 21+
+    [8162] = 20 * 1.15,
+    [8163] = 36 * 1.15,
+    [10441] = 61 * 1.15,
+    [25362] = 77 * 1.15,
+    [25527] = 86 * 1.15
 }
 
 local damageTaken = 0
 local damageMitigated = 0
+local strengthOfEarthAP = -1
 
 local DEBUG = false
 
@@ -66,7 +70,7 @@ function Softskin:ChatCommand(input)
         self:EvaluateShaman()
     elseif input:trim() == "debug" then
         DEBUG = not DEBUG
-        self:SendMessage(string.format("debug: %s", tostring(DEBUG)))
+        self:SendMessage(fmt("debug: %s", tostring(DEBUG)))
     end
 end
 
@@ -109,21 +113,21 @@ function Softskin:CombatLogHandler(...)
         return
     end
 
-    local _, _, _, _, _, _, _, _, _, buffId = AuraUtil.FindAuraByName("Stoneskin", "player")
-
-    if buffId == nil then
+    local _, _, _, _, _, _, _, _, _, buffId = findAura("Stoneskin", "player")
+    if buffId == nil or stoneSkinLookup[buffId] == nil then
         return
     end
 
-    if AuraUtil.FindAuraByName("Strength of Earth", "player") ~= nil then
-        return -- Multiple shaman
+    local _, _, _, _, _, _, _, _, _, strengthOfEarthId = findAura("Strength of Earth", "player")
+    if strengthOfEarthId ~= nil then
+        strengthOfEarthAP = strengthLookup[strengthOfEarthId]
     end
 
     local amount, _, _, _, _, _, _, _, _, _ = select(12, ...)
 
     damageTaken = damageTaken + amount
 
-    local reduction = C_PaperDollInfo.GetArmorEffectivenessAgainstTarget(UnitArmor("player"))
+    local reduction = getArmorEffectivenessAgainstTarget(UnitArmor("player"))
 
     local softskinSwingDamage = amount / reduction
 
@@ -133,7 +137,7 @@ function Softskin:CombatLogHandler(...)
     damageMitigated = damageMitigated + (swingDamage - softskinSwingDamage)
 
     if DEBUG then
-        -- self:SendMessage("swingDamage: " .. swingDamage .. "; damageMitigated: " .. damageMitigated)
+        self:SendMessage(fmt("swingDamage: %d; damageMitigated: %d", swingDamage, damageMitigated))
     end
 end
 
@@ -144,29 +148,28 @@ function Softskin:SendMessage(msg)
 end
 
 function Softskin:BuildReport()
-    local classFilename, hasKings, entityName, unitAP
+    local classFilename, hasKings, entityName, unitAP, playerLevel
 
-    local report = string.format("Analysis\nDamage taken: %d\nMaximum mitigated: %d (%.2f%%)\nTheoretical loss of:\n",
-        math.floor(damageTaken), math.floor(damageMitigated), damageMitigated / damageTaken * 100)
+    local report = fmt("Analysis\nDamage taken: %d\nMaximum mitigated: %d (%.2f%%)", floor(damageTaken),
+        floor(damageMitigated), damageMitigated / damageTaken * 100)
 
-    hasKings = AuraUtil.FindAuraByName("Blessing of Kings", "player") or
-                   AuraUtil.FindAuraByName("Greater Blessing of Kings", "player")
+    hasKings = findAura("Blessing of Kings", "player") or findAura("Greater Blessing of Kings", "player")
 
-    report = report ..
-                 string.format('* %s: %d AP\n', playerName, math.floor(self:GetEffectiveAP(playerClass, hasKings)))
+    report = report .. fmt('\nTheoretical loss of:\n* %s: %d AP\n', playerName,
+        floor(self:GetEffectiveAP(playerClass, hasKings, UnitLevel("Player"))))
 
     for i = 1, GetNumGroupMembers() - 1 do
         classFilename, _ = UnitClassBase("party" .. i)
         entityName = UnitName("party" .. i)
 
         if entityName ~= nil then
-            hasKings = AuraUtil.FindAuraByName("Blessing of Kings", "party" .. i) or
-                           AuraUtil.FindAuraByName("Greater Blessing of Kings", "party" .. i)
+            hasKings = findAura("Blessing of Kings", "party" .. i) or
+                           findAura("Greater Blessing of Kings", "party" .. i)
 
-            unitAP = math.floor(self:GetEffectiveAP(classFilename, hasKings))
+            unitAP = floor(self:GetEffectiveAP(classFilename, hasKings, UnitLevel("party" .. i)))
 
             if unitAP > 0 then
-                report = report .. string.format('* %s: %d AP\n', entityName, unitAP)
+                report = report .. fmt('* %s: %d AP\n', entityName, unitAP)
             end
         end
 
@@ -185,8 +188,26 @@ function Softskin:Announce(report)
     end
 end
 
-function Softskin:GetEffectiveAP(class, hasKings)
+function Softskin:GetEffectiveAP(class, hasKings, playerLevel)
     local effectiveAP = 0
+
+    if strengthOfEarthAP < 0 then
+        if playerLevel >= 65 then
+            strengthOfEarthAP = strengthLookup[25527]
+        elseif playerLevel >= 60 then
+            strengthOfEarthAP = strengthLookup[25362]
+        elseif playerLevel >= 52 then
+            strengthOfEarthAP = strengthLookup[10441]
+        elseif playerLevel >= 38 then
+            strengthOfEarthAP = strengthLookup[8163]
+        elseif playerLevel >= 24 then
+            strengthOfEarthAP = strengthLookup[8162]
+        elseif playerLevel >= 10 then
+            strengthOfEarthAP = strengthLookup[8076]
+        else
+            strengthOfEarthAP = -1
+        end
+    end
 
     if class == "WARRIOR" then
         -- Prot (Vitality) / Fury (Imp Berserker): * 1.1
