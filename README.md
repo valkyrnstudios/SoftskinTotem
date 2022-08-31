@@ -1,5 +1,7 @@
 # Softskin totem
 
+**Stoneskin totem is actually viable in Wrath, this project is no longer applicable**
+
 Are you a tank and tired of shaman dropping Softskin Totem instead of Strength of Earth claiming it prevents so much damage? Then this addon is for you!
 
 Inspecting party member talents is difficult in BCC, so `/sst report` will show theoretical loss of Attack Power if all members where melee specced, use `/sst announce` to show the group.
